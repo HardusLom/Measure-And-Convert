@@ -190,6 +190,7 @@ label.field-label {
 .btn-ghost { border-color: transparent; background: transparent; }
 .btn-ghost:hover { background: var(--surface-2); }
 .btn-icon { width: 42px; padding: 0; justify-content: center; font-size: 1.1rem; }
+.btn-xs { height: 26px; padding: 0 0.5rem; font-size: 0.8rem; }
 
 /* ----------------------------------------------------------------- tables */
 table { width: 100%; border-collapse: collapse; }

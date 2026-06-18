@@ -20,7 +20,7 @@ Then open <http://localhost:4200>. (`npm start` runs `ng serve` in development m
 
 | Route | What it does |
 |-------|--------------|
-| **Reference** (`/reference`) | The full categorised table of every quantity, its systems and unit symbols. Search + filter by measurement system. |
+| **Reference** (`/reference`) | The full categorised table of every quantity, its systems and unit symbols. Search + filter by measurement system. Checkbox on each row pins it to a Favourites table at the top of the page. Each row also has a ⇄ button that opens it directly in the Converter. |
 | **Converter** (`/converter`) | Pick a quantity, then a unit on each side, and convert live (e.g. mile ↔ kilometre). Only physically compatible units are ever offered. Includes a full breakdown into every unit, a swap button, and a "save pair" favourite toggle. Deep-linkable via `?q=&from=&to=&v=`. |
 | **Prefixes** (`/prefixes`) | SI prefix scaler — express a value across every prefix from yotta (10²⁴) to yocto (10⁻²⁴). |
 | **Formulas** (`/formulas`) | Searchable reference of common physics formulas with each variable and its SI unit. |

@@ -45,11 +45,19 @@ Add an entry to the relevant quantity's `units[]` in `units.data.ts` with a uniq
 
 ### Converter deep-linking
 
-The `/converter` route reads `?q=&from=&to=&v=` query params on load — maintain these when modifying the converter component.
+The `/converter` route reads `?q=&from=&to=&v=` query params on load — maintain these when modifying the converter component. The reference page's per-row ⇄ button navigates to `/converter?q=<quantityId>&from=<unitId>`.
+
+### Scroll behaviour
+
+`withInMemoryScrolling({ scrollPositionRestoration: 'top' })` is configured in `main.ts` — every navigation scrolls to the top.
 
 ### State management
 
 `StorageService` uses Angular signals (`signal<T>()`). Components read state reactively; mutations call service methods that update both the signal and `localStorage` in one step.
+
+### Reference page — Favourites
+
+The reference page has a session-only Favourites table (in-memory `Set` signal, not persisted) that appears above the category groups when at least one row is checked. Each unit row has a checkbox as its first column; checking it adds the row to Favourites, unchecking removes it. The Favourites table uses the same column structure and styling as the category tables.
 
 ## Notes
 

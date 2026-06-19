@@ -4,9 +4,9 @@
   "description": "Units, quantities & conversions — reference, converter, SI prefixes, formulas and quiz.",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "start": "node scripts/set-version.mjs && ng serve",
+    "build": "node scripts/set-version.mjs && ng build",
+    "watch": "node scripts/set-version.mjs && ng build --watch --configuration development"
   },
   "private": true,
   "dependencies": {

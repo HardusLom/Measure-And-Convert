@@ -71,6 +71,27 @@ import { fmt } from '../../shared/format.util';
           <span class="formula-label">Formula</span>
           <span class="formula-expr mono">{{ formulaExplainer }}</span>
         </div>
+
+        @if (visualiser(); as v) {
+          <div class="vis-section">
+            <span class="vis-label">Size comparison</span>
+            <div class="vis-bars">
+              <div class="vis-row">
+                <span class="vis-unit-name">1 {{ v.fromName }}</span>
+                <div class="vis-track">
+                  <div class="vis-bar vis-bar--from" [style.width.%]="v.fromPct"></div>
+                </div>
+              </div>
+              <div class="vis-row">
+                <span class="vis-unit-name">1 {{ v.toName }}</span>
+                <div class="vis-track">
+                  <div class="vis-bar vis-bar--to" [style.width.%]="v.toPct"></div>
+                </div>
+              </div>
+            </div>
+            <span class="vis-ratio">1 {{ v.fromName }} = <strong>{{ v.ratioLabel }}</strong> {{ v.toName }}</span>
+          </div>
+        }
       </div>
 
       <div class="card chain-card">
@@ -186,6 +207,21 @@ import { fmt } from '../../shared/format.util';
       }
       .formula-label { color: var(--text-faint); white-space: nowrap; }
       .formula-expr { color: var(--text); }
+      .vis-section {
+        display: flex; flex-direction: column; gap: 0.55rem;
+        margin-top: 0.85rem; padding-top: 0.85rem;
+        border-top: 1px solid var(--border);
+      }
+      .vis-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); }
+      .vis-bars { display: flex; flex-direction: column; gap: 0.5rem; }
+      .vis-row { display: flex; align-items: center; gap: 0.75rem; }
+      .vis-unit-name { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; min-width: 9ch; text-align: right; }
+      .vis-track { flex: 1; height: 18px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+      .vis-bar { height: 100%; border-radius: 4px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1); min-width: 2px; }
+      .vis-bar--from { background: var(--accent); }
+      .vis-bar--to { background: var(--accent-text); opacity: 0.55; }
+      .vis-ratio { font-size: 0.82rem; color: var(--text-muted); }
+      .vis-ratio strong { color: var(--text); }
       tr.highlight td { background: var(--accent-soft) !important; }
       .compare-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
       .view-toggle { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; }
@@ -401,6 +437,21 @@ export class ConverterComponent implements OnInit, OnDestroy {
 
   get fromUnit(): Unit | undefined {
     return this.quantity ? this.service.getUnit(this.quantity, this.fromId) : undefined;
+  }
+
+  visualiser(): { fromName: string; toName: string; fromPct: number; toPct: number; ratioLabel: string } | null {
+    const from = this.quantity ? this.service.getUnit(this.quantity, this.fromId) : undefined;
+    const to = this.quantity ? this.service.getUnit(this.quantity, this.toId) : undefined;
+    if (!from || !to || (from.offset ?? 0) !== 0 || (to.offset ?? 0) !== 0) return null;
+    if (from.id === to.id) return null;
+    const max = Math.max(from.factor, to.factor);
+    const fromPct = (from.factor / max) * 100;
+    const toPct = (to.factor / max) * 100;
+    const ratio = from.factor / to.factor;
+    const ratioLabel = ratio >= 1000 || ratio < 0.001
+      ? ratio.toExponential(3)
+      : parseFloat(ratio.toPrecision(4)).toString();
+    return { fromName: from.name, toName: to.name, fromPct, toPct, ratioLabel };
   }
 
   get formulaExplainer(): string {

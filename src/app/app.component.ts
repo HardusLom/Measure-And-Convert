@@ -18,6 +18,7 @@ interface SearchResult {
   imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
   template: `
     <header class="app-header">
+    <div class="header-inner">
       <div class="brand">
         <span class="brand-mark">±</span>
         <div>
@@ -63,6 +64,7 @@ interface SearchResult {
           </a>
         }
       </nav>
+    </div>
     </header>
 
     <main class="app-main">

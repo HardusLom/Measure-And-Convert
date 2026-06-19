@@ -17,55 +17,95 @@ import { fmt } from '../../shared/format.util';
       then a unit on each side. Conversions only ever offer physically compatible units.
     </p>
 
-    <div class="card">
-      <label class="field-label" for="qty">Quantity</label>
-      <select id="qty" class="input" [ngModel]="quantityId" (ngModelChange)="onQuantityChange($event)">
-        @for (q of service.convertible; track q.id) {
-          <option [value]="q.id">{{ q.name }}{{ q.symbol ? ' (' + q.symbol + ')' : '' }}</option>
-        }
-      </select>
+    <div class="converter-layout">
+      <div class="card">
+        <label class="field-label" for="qty">Quantity</label>
+        <select id="qty" class="input" [ngModel]="quantityId" (ngModelChange)="onQuantityChange($event)">
+          @for (q of service.convertible; track q.id) {
+            <option [value]="q.id">{{ q.name }}{{ q.symbol ? ' (' + q.symbol + ')' : '' }}</option>
+          }
+        </select>
 
-      <div class="convert-grid">
-        <div>
-          <label class="field-label" for="from">From</label>
-          <input class="input" id="fromVal" type="number" inputmode="decimal"
-                 [ngModel]="value" (ngModelChange)="onValueChange($event)" />
-          <select class="input" id="from" style="margin-top: 0.5rem;"
-                  [ngModel]="fromId" (ngModelChange)="onFromChange($event)">
-            @for (u of units(); track u.id) {
-              <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
-            }
-          </select>
+        <div class="convert-grid">
+          <div>
+            <label class="field-label" for="from">From</label>
+            <input class="input" id="fromVal" type="number" inputmode="decimal"
+                   [ngModel]="value" (ngModelChange)="onValueChange($event)" />
+            <select class="input" id="from" style="margin-top: 0.5rem;"
+                    [ngModel]="fromId" (ngModelChange)="onFromChange($event)">
+              @for (u of units(); track u.id) {
+                <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+              }
+            </select>
+          </div>
+
+          <button class="btn btn-icon swap" type="button" (click)="swap()" aria-label="Swap units" title="Swap">⇄</button>
+
+          <div>
+            <label class="field-label" for="to">To</label>
+            <div class="result-box">{{ formattedResult }}</div>
+            <select class="input" id="to" style="margin-top: 0.5rem;"
+                    [ngModel]="toId" (ngModelChange)="onToChange($event)">
+              @for (u of units(); track u.id) {
+                <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+              }
+            </select>
+          </div>
         </div>
 
-        <button class="btn btn-icon swap" type="button" (click)="swap()" aria-label="Swap units" title="Swap">⇄</button>
+        <div class="convert-summary">
+          <span class="mono">{{ fmt(value) }} {{ fromSymbol }} = {{ formattedResult }} {{ toSymbol }}</span>
+          <div class="summary-actions">
+            <button class="btn btn-ghost" type="button" (click)="copyLink()">
+              {{ copied() ? 'Copied!' : 'Copy link' }}
+            </button>
+            <button class="btn btn-ghost" type="button" (click)="toggleFavourite()">
+              {{ isFav() ? '★ Saved' : '☆ Save pair' }}
+            </button>
+          </div>
+        </div>
 
-        <div>
-          <label class="field-label" for="to">To</label>
-          <div class="result-box">{{ formattedResult }}</div>
-          <select class="input" id="to" style="margin-top: 0.5rem;"
-                  [ngModel]="toId" (ngModelChange)="onToChange($event)">
-            @for (u of units(); track u.id) {
-              <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
-            }
-          </select>
+        <div class="formula-row">
+          <span class="formula-label">Formula</span>
+          <span class="formula-expr mono">{{ formulaExplainer }}</span>
         </div>
       </div>
 
-      <div class="convert-summary">
-        <span class="mono">{{ fmt(value) }} {{ fromSymbol }} = {{ formattedResult }} {{ toSymbol }}</span>
-        <div class="summary-actions">
-          <button class="btn btn-ghost" type="button" (click)="copyLink()">
-            {{ copied() ? 'Copied!' : 'Copy link' }}
-          </button>
-          <button class="btn btn-ghost" type="button" (click)="toggleFavourite()">
-            {{ isFav() ? '★ Saved' : '☆ Save pair' }}
-          </button>
+      <div class="card chain-card">
+        <h3>Conversion chain</h3>
+        <p style="color: var(--text-faint); font-size: 0.85rem; margin: 0 0 1.25rem;">
+          Build a step-by-step path through intermediate units — each node is an equivalent
+          expression of <span class="mono">{{ fmt(value) }} {{ fromSymbol }}</span>.
+        </p>
+
+        <div class="chain-flow">
+          <div class="chain-node chain-start">
+            <span class="chain-val mono">{{ fmt(value) }}</span>
+            <span class="chain-unit-label">{{ fromUnit?.name }} <span class="mono">({{ fromSymbol }})</span></span>
+          </div>
+
+          @for (step of chainSteps(); track $index; let i = $index) {
+            <div class="chain-connector"><span class="chain-arrow">↓</span></div>
+            <div class="chain-node">
+              <span class="chain-val mono">{{ fmt(chainValue(step)) }}</span>
+              <div class="chain-controls">
+                <select class="input chain-select" [ngModel]="step" (ngModelChange)="updateChainStep(i, $event)">
+                  @for (u of units(); track u.id) {
+                    <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+                  }
+                </select>
+                <button class="btn btn-icon btn-ghost" type="button" (click)="removeChainStep(i)" aria-label="Remove step">✕</button>
+              </div>
+            </div>
+          }
+
+          <div class="chain-connector"><span class="chain-arrow">↓</span></div>
+          <button class="btn btn-ghost" type="button" (click)="addChainStep()">+ Add step</button>
         </div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" style="margin-top: 1.25rem;">
       <h3>All {{ quantity?.name?.toLowerCase() }} units</h3>
       <p style="color: var(--text-faint); font-size: 0.85rem; margin: 0 0 0.75rem;">
         {{ fmt(value) }} {{ fromSymbol }} expressed in every unit of this quantity.
@@ -112,8 +152,37 @@ import { fmt } from '../../shared/format.util';
         border-top: 1px solid var(--border);
       }
       .summary-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+      .formula-row {
+        display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+        margin-top: 0.85rem; padding-top: 0.85rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.875rem;
+      }
+      .formula-label { color: var(--text-faint); white-space: nowrap; }
+      .formula-expr { color: var(--text); }
       tr.highlight td { background: var(--accent-soft) !important; }
-      @media (max-width: 560px) {
+      .converter-layout {
+        display: flex; gap: 1.25rem; align-items: flex-start;
+      }
+      .converter-layout > .card { flex: 1; min-width: 0; margin-top: 0; }
+      .chain-card { display: flex; flex-direction: column; }
+      .chain-flow { display: flex; flex-direction: column; align-items: flex-start; gap: 0; flex: 1; }
+      .chain-node {
+        display: flex; flex-direction: column; gap: 0.3rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        width: 100%; box-sizing: border-box;
+      }
+      .chain-start { background: var(--accent-soft); }
+      .chain-val { font-size: 1.2rem; font-weight: 700; color: var(--accent-text); }
+      .chain-unit-label { font-size: 0.85rem; color: var(--text-faint); }
+      .chain-controls { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.3rem; }
+      .chain-select { flex: 1; margin: 0; }
+      .chain-connector { padding: 0.1rem 1.1rem; }
+      .chain-arrow { font-size: 1.3rem; color: var(--text-faint); line-height: 1; }
+      @media (max-width: 720px) {
+        .converter-layout { flex-direction: column; }
+        .converter-layout > .card + .card { margin-top: 1.25rem; }
         .convert-grid { grid-template-columns: 1fr; }
         .swap { transform: rotate(90deg); margin: 0.25rem auto; }
       }
@@ -134,6 +203,7 @@ export class ConverterComponent implements OnInit {
   result = 0;
   quantity?: Quantity;
   readonly copied = signal(false);
+  readonly chainSteps = signal<string[]>([]);
 
   ngOnInit(): void {
     const p = this.route.snapshot.queryParamMap;
@@ -169,6 +239,7 @@ export class ConverterComponent implements OnInit {
     this.quantityId = id;
     this.fromId = q.units[0].id;
     this.toId = q.units[1].id;
+    this.chainSteps.set([]);
     this.recompute();
   }
 
@@ -240,6 +311,50 @@ export class ConverterComponent implements OnInit {
         label: `${this.fromSymbol} → ${this.toSymbol}`,
       });
     }
+  }
+
+  get fromUnit(): Unit | undefined {
+    return this.quantity ? this.service.getUnit(this.quantity, this.fromId) : undefined;
+  }
+
+  get formulaExplainer(): string {
+    const from = this.quantity ? this.service.getUnit(this.quantity, this.fromId) : undefined;
+    const to = this.quantity ? this.service.getUnit(this.quantity, this.toId) : undefined;
+    if (!from || !to) return '';
+    if (from.id === to.id) return `${to.symbol} = ${from.symbol}`;
+
+    const coeff = (n: number) => parseFloat(n.toPrecision(6)).toString();
+    const A = from.factor / to.factor;
+    const B = ((from.offset ?? 0) - (to.offset ?? 0)) / to.factor;
+
+    if (Math.abs(B) < 1e-9) {
+      return `${to.symbol} = ${from.symbol} × ${coeff(A)}`;
+    }
+    const sign = B > 0 ? '+' : '−';
+    const absB = coeff(Math.abs(B));
+    if (Math.abs(A - 1) < 1e-9) {
+      return `${to.symbol} = ${from.symbol} ${sign} ${absB}`;
+    }
+    return `${to.symbol} = (${from.symbol} × ${coeff(A)}) ${sign} ${absB}`;
+  }
+
+  chainValue(unitId: string): number {
+    if (!this.quantity) return NaN;
+    return this.service.convert(this.quantity, this.fromId, unitId, this.value);
+  }
+
+  addChainStep(): void {
+    const used = new Set([this.fromId, ...this.chainSteps()]);
+    const next = this.units().find((u) => !used.has(u.id));
+    if (next) this.chainSteps.update((s) => [...s, next.id]);
+  }
+
+  updateChainStep(i: number, unitId: string): void {
+    this.chainSteps.update((s) => s.map((id, idx) => (idx === i ? unitId : id)));
+  }
+
+  removeChainStep(i: number): void {
+    this.chainSteps.update((s) => s.filter((_, idx) => idx !== i));
   }
 
   label(id: SystemId): string {

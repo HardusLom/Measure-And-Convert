@@ -1,6 +1,7 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ConversionService } from '../../services/conversion.service';
 import { StorageService } from '../../services/storage.service';
 import { Quantity, Unit, SystemId, SYSTEMS } from '../../models/unit.model';
@@ -236,7 +237,7 @@ import { fmt } from '../../shared/format.util';
     `,
   ],
 })
-export class ConverterComponent implements OnInit {
+export class ConverterComponent implements OnInit, OnDestroy {
   readonly service = inject(ConversionService);
   readonly storage = inject(StorageService);
   private readonly route = inject(ActivatedRoute);
@@ -253,17 +254,28 @@ export class ConverterComponent implements OnInit {
   readonly chainSteps = signal<string[]>([]);
   readonly viewMode = signal<'cards' | 'table'>('cards');
 
+  private paramSub?: Subscription;
+
   ngOnInit(): void {
-    const p = this.route.snapshot.queryParamMap;
-    const qId = p.get('q');
-    const q = (qId && this.service.getQuantity(qId)) || this.service.convertible[0];
-    this.quantity = q;
-    this.quantityId = q.id;
-    this.fromId = p.get('from') && this.service.getUnit(q, p.get('from')!) ? p.get('from')! : q.units[0].id;
-    this.toId = p.get('to') && this.service.getUnit(q, p.get('to')!) ? p.get('to')! : q.units[1].id;
-    const v = Number(p.get('v'));
-    if (!Number.isNaN(v) && p.get('v') !== null) this.value = v;
-    this.recompute();
+    this.paramSub = this.route.queryParamMap.subscribe((p) => {
+      const qId = p.get('q');
+      const q = (qId && this.service.getQuantity(qId)) || this.service.convertible[0];
+      const newFrom = p.get('from') && this.service.getUnit(q, p.get('from')!) ? p.get('from')! : q.units[0].id;
+      const newTo = p.get('to') && this.service.getUnit(q, p.get('to')!) ? p.get('to')! : q.units[1].id;
+      const v = Number(p.get('v'));
+      const quantityChanged = this.quantityId !== q.id;
+      this.quantity = q;
+      this.quantityId = q.id;
+      this.fromId = newFrom;
+      this.toId = newTo;
+      if (!Number.isNaN(v) && p.get('v') !== null) this.value = v;
+      if (quantityChanged) this.chainSteps.set([]);
+      this.recompute();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.paramSub?.unsubscribe();
   }
 
   units(): Unit[] {

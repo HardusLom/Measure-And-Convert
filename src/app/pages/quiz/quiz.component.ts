@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { ConversionService } from '../../services/conversion.service';
-import { StorageService } from '../../services/storage.service';
+import { StorageService, Difficulty } from '../../services/storage.service';
 import { Quantity, Unit, SYSTEMS } from '../../models/unit.model';
 import { fmt } from '../../shared/format.util';
 
@@ -14,6 +14,12 @@ interface Question {
   options: Option[];
 }
 
+const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
+  { id: 'easy',   label: 'Easy',   desc: 'Name → symbol recognition' },
+  { id: 'medium', label: 'Medium', desc: 'Mixed: symbols, quantities, systems, conversions' },
+  { id: 'hard',   label: 'Hard',   desc: 'Numeric conversions with close distractors' },
+];
+
 @Component({
   selector: 'app-quiz',
   standalone: true,
@@ -25,14 +31,26 @@ interface Question {
       same dataset that powers the reference and converter.
     </p>
 
+    <div class="diff-bar">
+      @for (d of difficulties; track d.id) {
+        <button class="diff-btn"
+                [class.active]="difficulty() === d.id"
+                [title]="d.desc"
+                (click)="setDifficulty(d.id)">
+          {{ d.label }}
+        </button>
+      }
+    </div>
+
     <div class="scorebar card">
       <div><span class="score-label">Score</span><span class="score-val">{{ score() }}</span></div>
       <div><span class="score-label">Answered</span><span class="score-val">{{ answered() }}</span></div>
       <div><span class="score-label">Streak</span><span class="score-val">{{ streak() }}</span></div>
-      <div><span class="score-label">Best</span><span class="score-val">{{ storage.bestScore() }}</span></div>
+      <div><span class="score-label">Best</span><span class="score-val">{{ bestScore() }}</span></div>
     </div>
 
     <div class="card">
+      <div class="diff-badge diff-{{ difficulty() }}">{{ diffLabel() }}</div>
       <p class="prompt">{{ q().prompt }}</p>
       @if (q().hint) { <p class="hint mono">{{ q().hint }}</p> }
 
@@ -60,6 +78,30 @@ interface Question {
   `,
   styles: [
     `
+      .diff-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+      .diff-btn {
+        flex: 1; padding: 0.45rem 0.75rem;
+        background: var(--surface); color: var(--text-muted);
+        border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+        font-size: 0.875rem; font-weight: 500; cursor: pointer;
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+      }
+      .diff-btn:hover { background: var(--surface-2); color: var(--text); }
+      .diff-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+      .diff-badge {
+        display: inline-block; padding: 0.15rem 0.55rem;
+        border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.07em;
+        margin-bottom: 0.6rem;
+      }
+      .diff-easy   { background: #d1fae5; color: #065f46; }
+      .diff-medium { background: #fef3c7; color: #92400e; }
+      .diff-hard   { background: #fee2e2; color: #991b1b; }
+      @media (prefers-color-scheme: dark) {
+        .diff-easy   { background: #064e3b; color: #6ee7b7; }
+        .diff-medium { background: #78350f; color: #fcd34d; }
+        .diff-hard   { background: #7f1d1d; color: #fca5a5; }
+      }
       .scorebar { display: flex; gap: 1rem; justify-content: space-around; text-align: center; }
       .score-label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); }
       .score-val { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -98,7 +140,9 @@ export class QuizComponent {
   readonly service = inject(ConversionService);
   readonly storage = inject(StorageService);
   readonly keys = ['A', 'B', 'C', 'D'];
+  readonly difficulties = DIFFICULTIES;
 
+  readonly difficulty = signal<Difficulty>('easy');
   readonly score = signal(0);
   readonly answered = signal(0);
   readonly streak = signal(0);
@@ -106,6 +150,15 @@ export class QuizComponent {
   readonly revealed = signal(false);
   readonly lastCorrect = signal(false);
   readonly q = signal<Question>(this.generate());
+
+  readonly bestScore = computed(() => this.storage.bestScores[this.difficulty()]());
+  readonly diffLabel = computed(() => DIFFICULTIES.find((d) => d.id === this.difficulty())!.label);
+
+  setDifficulty(d: Difficulty): void {
+    if (d === this.difficulty()) return;
+    this.difficulty.set(d);
+    this.resetState();
+  }
 
   choose(i: number): void {
     if (this.revealed()) return;
@@ -117,7 +170,7 @@ export class QuizComponent {
     if (correct) {
       this.score.update((n) => n + 1);
       this.streak.update((n) => n + 1);
-      this.storage.recordScore(this.score());
+      this.storage.recordScoreForDifficulty(this.difficulty(), this.score());
     } else {
       this.streak.set(0);
     }
@@ -130,10 +183,7 @@ export class QuizComponent {
   }
 
   reset(): void {
-    this.score.set(0);
-    this.answered.set(0);
-    this.streak.set(0);
-    this.next();
+    this.resetState();
   }
 
   // ---- question generation ---------------------------------------------
@@ -150,13 +200,30 @@ export class QuizComponent {
     return a;
   }
 
+  private resetState(): void {
+    this.score.set(0);
+    this.answered.set(0);
+    this.streak.set(0);
+    this.chosen.set(null);
+    this.revealed.set(false);
+    this.q.set(this.generate());
+  }
+
   private generate(): Question {
-    const kind = Math.floor(Math.random() * 4);
-    switch (kind) {
-      case 0: return this.symbolQuestion();
-      case 1: return this.quantityQuestion();
-      case 2: return this.systemQuestion();
-      default: return this.conversionQuestion();
+    switch (this.difficulty()) {
+      case 'easy':
+        return this.symbolQuestion();
+      case 'hard':
+        return this.hardConversionQuestion();
+      default: {
+        const kind = Math.floor(Math.random() * 4);
+        switch (kind) {
+          case 0: return this.symbolQuestion();
+          case 1: return this.quantityQuestion();
+          case 2: return this.systemQuestion();
+          default: return this.conversionQuestion();
+        }
+      }
     }
   }
 
@@ -222,5 +289,47 @@ export class QuizComponent {
       ...[...wrongs].map((w) => ({ text: `${w} ${to.symbol}`, correct: false })),
     ]);
     return { prompt: `Convert ${value} ${from.symbol} to ${to.name} (${to.symbol}).`, hint: `Quantity: ${q.name}`, options };
+  }
+
+  // Hard mode: only numeric conversions, distractors are within ±5–35% of the correct answer
+  private hardConversionQuestion(): Question {
+    const convertible = this.service.convertible;
+    const q = this.rand(convertible);
+    const [from, to] = this.shuffle(q.units).slice(0, 2);
+    const value = this.rand([1, 2, 5, 10, 25, 100]);
+    const answer = this.service.convert(q, from.id, to.id, value);
+    const fAnswer = fmt(answer);
+
+    // Close perturbation factors — within 5–35% offset
+    const perturbations = [
+      1.05, 0.95, 1.12, 0.88, 1.20, 0.80, 1.35, 0.65, 1.08, 0.92,
+    ];
+    const wrongs = new Set<string>();
+    let guard = 0;
+    while (wrongs.size < 3 && guard < 60) {
+      guard++;
+      const factor = this.rand(perturbations);
+      const candidate = fmt(answer * factor);
+      if (candidate !== fAnswer) wrongs.add(candidate);
+    }
+    // Fallback: if answer is near zero some perturbations produce same fmt — use additive noise
+    if (wrongs.size < 3) {
+      const step = Math.abs(answer) < 1e-6 ? 1 : answer;
+      for (const delta of [0.1, -0.1, 0.3, -0.3, 0.5]) {
+        if (wrongs.size >= 3) break;
+        const candidate = fmt(answer + step * delta);
+        if (candidate !== fAnswer) wrongs.add(candidate);
+      }
+    }
+
+    const options = this.shuffle([
+      { text: `${fAnswer} ${to.symbol}`, correct: true },
+      ...[...wrongs].map((w) => ({ text: `${w} ${to.symbol}`, correct: false })),
+    ]);
+    return {
+      prompt: `Convert ${value} ${from.symbol} to ${to.name} (${to.symbol}).`,
+      hint: `Quantity: ${q.name}`,
+      options,
+    };
   }
 }

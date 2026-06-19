@@ -6,11 +6,24 @@ const HIST_KEY = 'measure.history';
 const SCORE_KEY = 'measure.bestScore';
 const HISTORY_LIMIT = 25;
 
+export type Difficulty = 'easy' | 'medium' | 'hard';
+const DIFFICULTY_SCORE_KEYS: Record<Difficulty, string> = {
+  easy: 'measure.bestScore.easy',
+  medium: 'measure.bestScore.medium',
+  hard: 'measure.bestScore.hard',
+};
+
 @Injectable({ providedIn: 'root' })
 export class StorageService {
   readonly favourites = signal<Favourite[]>(this.load<Favourite[]>(FAV_KEY, []));
   readonly history = signal<HistoryItem[]>(this.load<HistoryItem[]>(HIST_KEY, []));
+  /** @deprecated kept for backwards compat — use bestScores per difficulty */
   readonly bestScore = signal<number>(this.load<number>(SCORE_KEY, 0));
+  readonly bestScores = {
+    easy: signal<number>(this.load<number>(DIFFICULTY_SCORE_KEYS.easy, 0)),
+    medium: signal<number>(this.load<number>(DIFFICULTY_SCORE_KEYS.medium, 0)),
+    hard: signal<number>(this.load<number>(DIFFICULTY_SCORE_KEYS.hard, 0)),
+  };
 
   private load<T>(key: string, fallback: T): T {
     try {
@@ -77,6 +90,14 @@ export class StorageService {
     if (score > this.bestScore()) {
       this.bestScore.set(score);
       this.save(SCORE_KEY, score);
+    }
+  }
+
+  recordScoreForDifficulty(difficulty: Difficulty, score: number): void {
+    const sig = this.bestScores[difficulty];
+    if (score > sig()) {
+      sig.set(score);
+      this.save(DIFFICULTY_SCORE_KEYS[difficulty], score);
     }
   }
 }

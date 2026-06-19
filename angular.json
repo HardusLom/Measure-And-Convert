@@ -23,12 +23,16 @@
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "assets": [],
+            "assets": [
+              "src/assets",
+              { "glob": "manifest.webmanifest", "input": "src", "output": "/" }
+            ],
             "styles": ["src/styles.css"],
             "scripts": []
           },
           "configurations": {
             "production": {
+              "serviceWorker": "ngsw-config.json",
               "budgets": [
                 { "type": "initial", "maximumWarning": "750kb", "maximumError": "1.5mb" },
                 { "type": "anyComponentStyle", "maximumWarning": "16kb", "maximumError": "32kb" }

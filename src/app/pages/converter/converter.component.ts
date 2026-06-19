@@ -1,6 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConversionService } from '../../services/conversion.service';
 import { StorageService } from '../../services/storage.service';
 import { Quantity, Unit, SystemId, SYSTEMS } from '../../models/unit.model';
@@ -54,9 +54,14 @@ import { fmt } from '../../shared/format.util';
 
       <div class="convert-summary">
         <span class="mono">{{ fmt(value) }} {{ fromSymbol }} = {{ formattedResult }} {{ toSymbol }}</span>
-        <button class="btn btn-ghost" type="button" (click)="toggleFavourite()">
-          {{ isFav() ? '★ Saved' : '☆ Save pair' }}
-        </button>
+        <div class="summary-actions">
+          <button class="btn btn-ghost" type="button" (click)="copyLink()">
+            {{ copied() ? 'Copied!' : 'Copy link' }}
+          </button>
+          <button class="btn btn-ghost" type="button" (click)="toggleFavourite()">
+            {{ isFav() ? '★ Saved' : '☆ Save pair' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -106,6 +111,7 @@ import { fmt } from '../../shared/format.util';
         margin-top: 1.25rem; padding-top: 1rem;
         border-top: 1px solid var(--border);
       }
+      .summary-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
       tr.highlight td { background: var(--accent-soft) !important; }
       @media (max-width: 560px) {
         .convert-grid { grid-template-columns: 1fr; }
@@ -118,6 +124,7 @@ export class ConverterComponent implements OnInit {
   readonly service = inject(ConversionService);
   readonly storage = inject(StorageService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly fmt = fmt;
 
   quantityId = '';
@@ -126,6 +133,7 @@ export class ConverterComponent implements OnInit {
   value = 1;
   result = 0;
   quantity?: Quantity;
+  readonly copied = signal(false);
 
   ngOnInit(): void {
     const p = this.route.snapshot.queryParamMap;
@@ -185,6 +193,10 @@ export class ConverterComponent implements OnInit {
   private recompute(): void {
     if (!this.quantity) return;
     this.result = this.service.convert(this.quantity, this.fromId, this.toId, this.value);
+    this.router.navigate([], {
+      queryParams: { q: this.quantityId, from: this.fromId, to: this.toId, v: this.value },
+      replaceUrl: true,
+    });
     if (isFinite(this.result) && isFinite(this.value)) {
       this.storage.addHistory({
         quantityId: this.quantityId,
@@ -195,6 +207,14 @@ export class ConverterComponent implements OnInit {
         ts: Date.now(),
       });
     }
+  }
+
+  copyLink(): void {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    });
   }
 
   breakdown() {

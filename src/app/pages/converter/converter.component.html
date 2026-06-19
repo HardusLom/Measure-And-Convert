@@ -1,0 +1,159 @@
+<h2>Converter</h2>
+<p class="page-intro">
+  Convert any unit to a directly related one — e.g. mile&nbsp;↔&nbsp;kilometre. Pick a quantity,
+  then a unit on each side. Conversions only ever offer physically compatible units.
+</p>
+
+<div class="converter-layout">
+  <div class="card">
+    <label class="field-label" for="qty">Quantity</label>
+    <select id="qty" class="input" [ngModel]="quantityId" (ngModelChange)="onQuantityChange($event)">
+      @for (q of service.convertible; track q.id) {
+        <option [value]="q.id">{{ q.name }}{{ q.symbol ? ' (' + q.symbol + ')' : '' }}</option>
+      }
+    </select>
+
+    <div class="convert-grid">
+      <div>
+        <label class="field-label" for="from">From</label>
+        <input class="input" id="fromVal" type="number" inputmode="decimal"
+               [ngModel]="value" (ngModelChange)="onValueChange($event)" />
+        <select class="input" id="from" style="margin-top: 0.5rem;"
+                [ngModel]="fromId" (ngModelChange)="onFromChange($event)">
+          @for (u of units(); track u.id) {
+            <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+          }
+        </select>
+      </div>
+
+      <button class="btn btn-icon swap" type="button" (click)="swap()" aria-label="Swap units" title="Swap">⇄</button>
+
+      <div>
+        <label class="field-label" for="to">To</label>
+        <div class="result-box">{{ formattedResult }}</div>
+        <select class="input" id="to" style="margin-top: 0.5rem;"
+                [ngModel]="toId" (ngModelChange)="onToChange($event)">
+          @for (u of units(); track u.id) {
+            <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="convert-summary">
+      <span class="mono">{{ fmt(value) }} {{ fromSymbol }} = {{ formattedResult }} {{ toSymbol }}</span>
+      <div class="summary-actions">
+        <button class="btn btn-ghost" type="button" (click)="copyLink()">
+          {{ copied() ? 'Copied!' : 'Copy link' }}
+        </button>
+        <button class="btn btn-ghost" type="button" (click)="toggleFavourite()">
+          {{ isFav() ? '★ Saved' : '☆ Save pair' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="formula-row">
+      <span class="formula-label">Formula</span>
+      <span class="formula-expr mono">{{ formulaExplainer }}</span>
+    </div>
+
+    @if (visualiser(); as v) {
+      <div class="vis-section">
+        <span class="vis-label">Size comparison</span>
+        <div class="vis-bars">
+          <div class="vis-row">
+            <span class="vis-unit-name">1 {{ v.fromName }}</span>
+            <div class="vis-track">
+              <div class="vis-bar vis-bar--from" [style.width.%]="v.fromPct"></div>
+            </div>
+          </div>
+          <div class="vis-row">
+            <span class="vis-unit-name">1 {{ v.toName }}</span>
+            <div class="vis-track">
+              <div class="vis-bar vis-bar--to" [style.width.%]="v.toPct"></div>
+            </div>
+          </div>
+        </div>
+        <span class="vis-ratio">1 {{ v.fromName }} = <strong>{{ v.ratioLabel }}</strong> {{ v.toName }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="card chain-card">
+    <h3>Conversion chain</h3>
+    <p style="color: var(--text-faint); font-size: 0.85rem; margin: 0 0 1.25rem;">
+      Build a step-by-step path through intermediate units — each node is an equivalent
+      expression of <span class="mono">{{ fmt(value) }} {{ fromSymbol }}</span>.
+    </p>
+
+    <div class="chain-flow">
+      <div class="chain-node chain-start">
+        <span class="chain-val mono">{{ fmt(value) }}</span>
+        <span class="chain-unit-label">{{ fromUnit?.name }} <span class="mono">({{ fromSymbol }})</span></span>
+      </div>
+
+      @for (step of chainSteps(); track $index; let i = $index) {
+        <div class="chain-connector"><span class="chain-arrow">↓</span></div>
+        <div class="chain-node">
+          <span class="chain-val mono">{{ fmt(chainValue(step)) }}</span>
+          <div class="chain-controls">
+            <select class="input chain-select" [ngModel]="step" (ngModelChange)="updateChainStep(i, $event)">
+              @for (u of units(); track u.id) {
+                <option [value]="u.id">{{ u.name }} ({{ u.symbol }})</option>
+              }
+            </select>
+            <button class="btn btn-icon btn-ghost" type="button" (click)="removeChainStep(i)" aria-label="Remove step">✕</button>
+          </div>
+        </div>
+      }
+
+      <div class="chain-connector"><span class="chain-arrow">↓</span></div>
+      <button class="btn btn-ghost" type="button" (click)="addChainStep()">+ Add step</button>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 1.25rem;">
+  <div class="compare-header">
+    <div>
+      <h3 style="margin: 0;">All {{ quantity?.name?.toLowerCase() }} units</h3>
+      <p style="color: var(--text-faint); font-size: 0.85rem; margin: 0.25rem 0 0;">
+        {{ fmt(value) }} {{ fromSymbol }} expressed in every unit of this quantity.
+      </p>
+    </div>
+    <div class="view-toggle">
+      <button class="toggle-btn" [class.active]="viewMode() === 'cards'" (click)="viewMode.set('cards')">Cards</button>
+      <button class="toggle-btn" [class.active]="viewMode() === 'table'" (click)="viewMode.set('table')">Table</button>
+    </div>
+  </div>
+
+  @if (viewMode() === 'cards') {
+    <div class="compare-grid">
+      @for (row of breakdown(); track row.unit.id) {
+        <div class="compare-card" [class.compare-card--active]="row.unit.id === toId"
+             (click)="selectToUnit(row.unit.id)" style="cursor: pointer;">
+          <span class="compare-val mono">{{ fmt(row.value) }}</span>
+          <span class="compare-sym mono">{{ row.unit.symbol }}</span>
+          <span class="compare-name">{{ row.unit.name }}</span>
+          <span class="badge" [class]="'badge ' + row.unit.system">{{ label(row.unit.system) }}</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <table style="margin-top: 0.75rem;">
+      <thead>
+        <tr><th>Unit</th><th>System</th><th style="text-align: right;">Value</th></tr>
+      </thead>
+      <tbody>
+        @for (row of breakdown(); track row.unit.id) {
+          <tr [class.highlight]="row.unit.id === toId"
+              (click)="selectToUnit(row.unit.id)" style="cursor: pointer;">
+            <td>{{ row.unit.name }} <span class="mono">({{ row.unit.symbol }})</span></td>
+            <td><span class="badge" [class]="'badge ' + row.unit.system">{{ label(row.unit.system) }}</span></td>
+            <td style="text-align: right;" class="mono">{{ fmt(row.value) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

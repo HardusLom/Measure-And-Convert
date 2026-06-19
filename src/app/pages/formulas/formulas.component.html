@@ -1,0 +1,44 @@
+<h2>Formulas</h2>
+<p class="page-intro">
+  Common relationships between the quantities in this app, with each variable and its SI unit.
+  Search by name, area, or symbol.
+</p>
+
+<div class="card">
+  <input class="input" type="search" placeholder="Search formulas…"
+         [ngModel]="term()" (ngModelChange)="term.set($event)" />
+  <div class="chip-row" style="margin-top: 0.9rem;">
+    <button class="chip" [class.active]="area() === 'all'" (click)="area.set('all')">All areas</button>
+    @for (a of areas; track a) {
+      <button class="chip" [class.active]="area() === a" (click)="area.set(a)">{{ a }}</button>
+    }
+  </div>
+</div>
+
+<div class="formula-grid">
+  @for (f of filtered(); track f.name) {
+    <div class="card formula">
+      <div class="formula-head">
+        <h3>{{ f.name }}</h3>
+        <span class="badge other">{{ f.area }}</span>
+      </div>
+      <div class="expr mono">{{ f.expression }}</div>
+      <p class="desc">{{ f.description }}</p>
+      <table>
+        <tbody>
+          @for (v of f.variables; track v.sym) {
+            <tr>
+              <td class="mono" style="width: 18%;">{{ v.sym }}</td>
+              <td>{{ v.meaning }}</td>
+              <td class="mono" style="text-align: right; width: 22%;">{{ v.unit }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (filtered().length === 0) {
+  <div class="empty">No formulas match your search.</div>
+}

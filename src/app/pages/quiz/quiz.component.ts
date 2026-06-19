@@ -24,58 +24,7 @@ const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
   selector: 'app-quiz',
   standalone: true,
   imports: [],
-  template: `
-    <h2>Quiz</h2>
-    <p class="page-intro">
-      Test your recall of units, symbols, systems and conversions. Questions are generated from the
-      same dataset that powers the reference and converter.
-    </p>
-
-    <div class="diff-bar">
-      @for (d of difficulties; track d.id) {
-        <button class="diff-btn"
-                [class.active]="difficulty() === d.id"
-                [title]="d.desc"
-                (click)="setDifficulty(d.id)">
-          {{ d.label }}
-        </button>
-      }
-    </div>
-
-    <div class="scorebar card">
-      <div><span class="score-label">Score</span><span class="score-val">{{ score() }}</span></div>
-      <div><span class="score-label">Answered</span><span class="score-val">{{ answered() }}</span></div>
-      <div><span class="score-label">Streak</span><span class="score-val">{{ streak() }}</span></div>
-      <div><span class="score-label">Best</span><span class="score-val">{{ bestScore() }}</span></div>
-    </div>
-
-    <div class="card">
-      <div class="diff-badge diff-{{ difficulty() }}">{{ diffLabel() }}</div>
-      <p class="prompt">{{ q().prompt }}</p>
-      @if (q().hint) { <p class="hint mono">{{ q().hint }}</p> }
-
-      <div class="options">
-        @for (opt of q().options; track opt.text; let i = $index) {
-          <button class="opt"
-                  [class.correct]="revealed() && opt.correct"
-                  [class.wrong]="revealed() && chosen() === i && !opt.correct"
-                  [disabled]="revealed()"
-                  (click)="choose(i)">
-            <span class="opt-key">{{ keys[i] }}</span>{{ opt.text }}
-          </button>
-        }
-      </div>
-
-      @if (revealed()) {
-        <div class="feedback" [class.good]="lastCorrect()" [class.bad]="!lastCorrect()">
-          {{ lastCorrect() ? '✓ Correct' : '✗ Not quite' }}
-          <button class="btn btn-primary" type="button" (click)="next()">Next question →</button>
-        </div>
-      }
-    </div>
-
-    <button class="btn btn-ghost" type="button" (click)="reset()" style="margin-top: 1rem;">Reset score</button>
-  `,
+  templateUrl: './quiz.component.html',
   styles: [
     `
       .diff-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }

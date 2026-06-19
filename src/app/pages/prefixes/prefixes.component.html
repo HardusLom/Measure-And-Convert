@@ -1,0 +1,50 @@
+<h2>SI prefix scaler</h2>
+<p class="page-intro">
+  Enter a value with a prefix and a base unit — see it expressed across every SI prefix from
+  yotta (10²⁴) down to yocto (10⁻²⁴).
+</p>
+
+<div class="card">
+  <div class="prefix-input">
+    <div>
+      <label class="field-label" for="val">Value</label>
+      <input id="val" class="input" type="number" inputmode="decimal"
+             [ngModel]="value" (ngModelChange)="value = +$event" />
+    </div>
+    <div>
+      <label class="field-label" for="pfx">Prefix</label>
+      <select id="pfx" class="input" [(ngModel)]="prefixSymbol">
+        @for (p of prefixes; track p.symbol) {
+          <option [value]="p.symbol">{{ p.name }} ({{ p.symbol || '—' }}, 10<sup>{{ p.exponent }}</sup>)</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label class="field-label" for="unit">Base unit</label>
+      <input id="unit" class="input" type="text" [(ngModel)]="unit" placeholder="e.g. m, g, W, B" />
+    </div>
+  </div>
+  <p class="restated mono">
+    = {{ fmt(baseValue()) }} {{ unit }} &nbsp;(in the base unit)
+  </p>
+</div>
+
+<div class="card" style="padding: 0.6rem 1rem;">
+  <table>
+    <thead>
+      <tr>
+        <th>Prefix</th><th>Symbol</th><th>Power</th><th style="text-align: right;">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of prefixes; track p.symbol) {
+        <tr [class.highlight]="p.symbol === prefixSymbol">
+          <td>{{ p.name }}</td>
+          <td class="mono">{{ p.symbol || '—' }}{{ unit }}</td>
+          <td class="mono">10<sup>{{ p.exponent }}</sup></td>
+          <td style="text-align: right;" class="mono">{{ fmt(valueAt(p)) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,57 @@
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark">±</span>
+      <div>
+        <h1>Measure</h1>
+        <p>Units, quantities &amp; conversions</p>
+      </div>
+    </div>
+
+    <div class="global-search">
+      <input class="input search-input"
+             type="search"
+             placeholder="Search units…"
+             autocomplete="off"
+             aria-label="Search units"
+             [ngModel]="searchTerm()"
+             (ngModelChange)="searchTerm.set($event)"
+             (keydown)="onSearchKey($event)"
+             (blur)="onSearchBlur()" />
+      @if (searchResults().length > 0) {
+        <div class="search-dropdown" role="listbox">
+          @for (r of searchResults(); track r.quantityId + r.unitId) {
+            <button class="search-item" type="button" role="option"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="selectResult(r)">
+              <span class="search-item-main">
+                <span>{{ r.unitName }}</span>
+                <span class="mono search-sym">{{ r.unitSym }}</span>
+              </span>
+              <span class="search-item-sub">{{ r.quantityName }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <button class="menu-toggle" type="button" (click)="menuOpen.set(!menuOpen())"
+            [attr.aria-expanded]="menuOpen()" aria-label="Toggle menu">☰</button>
+    <nav class="app-nav" [class.open]="menuOpen()">
+      @for (item of nav; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active"
+           (click)="menuOpen.set(false)">
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>{{ item.label }}
+        </a>
+      }
+    </nav>
+  </div>
+</header>
+
+<main class="app-main">
+  <router-outlet />
+</main>
+
+<footer class="app-footer">
+  <span>Built with Angular {{ angularVersion }} · all conversions use exact factors where defined.</span>
+</footer>

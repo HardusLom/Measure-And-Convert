@@ -9,59 +9,7 @@ import { fmt } from '../../shared/format.util';
   selector: 'app-saved',
   standalone: true,
   imports: [],
-  template: `
-    <h2>Saved</h2>
-    <p class="page-intro">
-      Your pinned conversion pairs and recent conversion history. Tap any item to reopen it in the
-      converter. Stored locally in this browser.
-    </p>
-
-    <div class="card">
-      <h3>★ Favourite pairs</h3>
-      @if (storage.favourites().length === 0) {
-        <p class="empty" style="padding: 1.5rem 0;">
-          No favourites yet. In the converter, choose a pair and tap “Save pair”.
-        </p>
-      } @else {
-        <ul class="list">
-          @for (f of storage.favourites(); track f.id) {
-            <li>
-              <button class="item" type="button" (click)="openFav(f)">
-                <span class="item-title">{{ quantityName(f.quantityId) }}</span>
-                <span class="mono item-sub">{{ unitLabel(f.quantityId, f.fromId) }} → {{ unitLabel(f.quantityId, f.toId) }}</span>
-              </button>
-              <button class="btn btn-icon btn-ghost" type="button" (click)="storage.removeFavourite(f.id)" aria-label="Remove">✕</button>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-
-    <div class="card">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <h3 style="margin: 0;">Recent history</h3>
-        @if (storage.history().length > 0) {
-          <button class="btn btn-ghost" type="button" (click)="storage.clearHistory()">Clear</button>
-        }
-      </div>
-      @if (storage.history().length === 0) {
-        <p class="empty" style="padding: 1.5rem 0;">No conversions yet.</p>
-      } @else {
-        <ul class="list" style="margin-top: 0.75rem;">
-          @for (h of storage.history(); track h.ts) {
-            <li>
-              <button class="item" type="button" (click)="openHistory(h)">
-                <span class="mono item-title">
-                  {{ fmt(h.value) }} {{ unitSym(h.quantityId, h.fromId) }} = {{ fmt(h.result) }} {{ unitSym(h.quantityId, h.toId) }}
-                </span>
-                <span class="item-sub">{{ quantityName(h.quantityId) }} · {{ time(h.ts) }}</span>
-              </button>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-  `,
+  templateUrl: './saved.component.html',
   styles: [
     `
       .list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }

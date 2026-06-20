@@ -17,7 +17,7 @@ Then open <http://localhost:4200>. (`npm start` runs `ng serve` in development m
 
 | Route | What it does |
 |-------|--------------|
-| **Reference** (`/reference`) | Full categorised table of every unit and symbol. Filter by measurement system, search, expand a category's description panel with ⓘ, checkbox any row to pin it to a live Favourites table at the top. Each row has a ⇄ button that opens the unit directly in the Converter. |
+| **Reference** (`/reference`) | Full categorised table of every unit and symbol. Filter by measurement system, search, expand a category's description panel with ⓘ, checkbox any row to pin it to a live Favourites table at the top. Each row has a ⇄ button that opens the unit directly in the Converter, and a **𝐖** link to the unit's Wikipedia article (where available). |
 | **Converter** (`/converter`) | Pick a quantity and a unit on each side; both fields update live. Features: compound-unit display (e.g. 5 ft 9 in), scale visualiser bar, formula explainer (e.g. °F = °C × 1.8 + 32), multi-step conversion chain, cards/table toggle for the full breakdown, copy-result and copy-link buttons, favourite toggle. Deep-linkable via `?q=&from=&to=&v=`. |
 | **Prefixes** (`/prefixes`) | SI prefix scaler — express a value across all 20 prefixes from yotta (10²⁴) to yocto (10⁻²⁴). |
 | **Formulas** (`/formulas`) | Searchable reference of common physics formulas with each variable and its SI unit. |
@@ -74,7 +74,7 @@ ngsw-config.json               Angular service-worker caching config
 - **Styling is plain CSS** (CSS variables, no framework). To match your stack, swap the components' templates for PrimeNG / Angular Material components.
 - **Persistence is `localStorage`** (favourites, history, per-difficulty best scores). Replace `StorageService` with an API-backed service for server-side storage.
 - **`strictTemplates` is off** in `tsconfig.json`; turn it on when iterating in your editor.
-- **Adding a unit**: add an entry to the relevant quantity's `units[]` in `units.data.ts` with a unique `id`, a `symbol`, a `system`, and a `factor` relative to that quantity's base unit. It appears automatically in the reference, converter, breakdown, and quiz.
+- **Adding a unit**: add an entry to the relevant quantity's `units[]` in `units.data.ts` with a unique `id`, a `symbol`, a `system`, and a `factor` relative to that quantity's base unit. Optionally include a `wikipediaUrl` to surface a **𝐖** link in the reference table. The unit appears automatically in the reference, converter, breakdown, and quiz.
 - **`year`** uses the Julian year (365.25 days); change the factor in `units.data.ts` if you prefer 365 days.
 - **PWA**: the app installs as a standalone PWA in production builds. The service worker is disabled in dev mode (`ng serve`).
 

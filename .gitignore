@@ -2,7 +2,7 @@ node_modules
 dist
 .angular
 .playwright-mcp
-src/environments/environment.ts
+src/environments
 .DS_Store
 .claude
 CLAUDE.md

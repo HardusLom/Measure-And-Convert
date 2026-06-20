@@ -26,7 +26,7 @@ Then open <http://localhost:4200>. (`npm start` runs `ng serve` in development m
 
 ### Global search
 
-The header search box filters all units by name, symbol, or quantity as you type. Selecting a result (mouse or ↑ ↓ Enter) opens it in the Converter.
+The header search box filters all units by name, symbol, or quantity as you type. Selecting a result (mouse or ↑ ↓ Enter) is context-aware: on `/reference` it searches the reference table; on `/formulas` it filters formulas; anywhere else it opens the unit in the Converter.
 
 ## How conversions work
 
@@ -59,9 +59,11 @@ src/
     models/unit.model.ts       types: Unit, Quantity, Formula, SiPrefix, Favourite, HistoryItem
     data/units.data.ts         the dataset (quantities, prefixes, formulas, category metadata)
     services/
-      conversion.service.ts    factor/offset maths, lookups, breakdown
-      storage.service.ts       favourites/history/per-difficulty best-scores via localStorage signals
-    shared/format.util.ts      locale-neutral number formatting
+      conversion.service.ts      factor/offset maths, lookups, breakdown
+      storage.service.ts         favourites/history/per-difficulty best-scores via localStorage signals
+      reference-reset.service.ts RxJS Subject bus — fires when the user re-navigates to /reference
+    shared/
+      format.util.ts             fmt() — locale-neutral number formatter (thin-space thousands, scientific at extremes)
     pages/
       reference/  converter/  prefixes/  formulas/  quiz/  saved/
 ngsw-config.json               Angular service-worker caching config

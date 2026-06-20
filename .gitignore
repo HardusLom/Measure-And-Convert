@@ -5,3 +5,4 @@ dist
 src/environments/environment.ts
 .DS_Store
 .claude
+CLAUDE.md

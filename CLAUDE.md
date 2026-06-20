@@ -28,7 +28,9 @@ Angular 18 standalone-component SPA. No UI framework — plain CSS with CSS vari
 | `src/app/models/unit.model.ts` | All TypeScript interfaces: `Unit`, `Quantity`, `Formula`, `SiPrefix`, `Favourite`, `HistoryItem`. |
 | `src/app/services/conversion.service.ts` | Stateless math: `convert()`, `breakdown()`, and dataset lookups. |
 | `src/app/services/storage.service.ts` | Angular signals wrapping `localStorage` for favourites, history (capped at 25), and per-difficulty quiz best scores. |
-| `src/app/app.component.ts` | Shell: header with global unit search, hamburger nav, footer, router outlet. |
+| `src/app/services/reference-reset.service.ts` | RxJS `Subject` bus — `AppComponent` fires it when the user re-navigates to `/reference`, causing `ReferenceComponent` to reset its state. |
+| `src/app/shared/format.util.ts` | `fmt(n, sig?)` — locale-neutral number formatter (thousands thin-space, scientific at extremes). Used wherever a result number is displayed. |
+| `src/app/app.component.ts` | Shell: header with context-aware global unit search, hamburger nav, footer, router outlet. Uses `ReferenceResetService` to signal reference resets. |
 | `src/app/app.routes.ts` | Lazy-loaded routes for all six pages. |
 | `src/manifest.webmanifest` | PWA manifest (name, icons, display mode). |
 | `ngsw-config.json` | Angular service-worker caching config. |
@@ -62,7 +64,13 @@ Add an entry to the relevant quantity's `units[]` in `units.data.ts` with a uniq
 
 ### Global header search
 
-`AppComponent` builds an in-memory flat list of all units on startup and filters it reactively as the user types. Selecting a result navigates to `/converter?q=<quantityId>&from=<unitId>`. Keyboard navigation (↑ ↓ Enter Escape) is supported; the dropdown closes on blur with a 150 ms delay to allow click events to fire first.
+`AppComponent` builds an in-memory flat list of all units on startup and filters it reactively as the user types. Selecting a result is context-aware:
+
+- On `/reference` → navigates to `/reference?search=<unitName>`
+- On `/formulas` → navigates to `/formulas?search=<quantityName>`
+- Elsewhere → navigates to `/converter?q=<quantityId>&from=<unitId>`
+
+Keyboard navigation (↑ ↓ Enter Escape) is supported; the dropdown closes on blur with a 150 ms delay to allow click events to fire first.
 
 ### Converter deep-linking
 

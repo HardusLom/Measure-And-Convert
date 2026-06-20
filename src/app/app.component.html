@@ -1,6 +1,6 @@
 <header class="app-header">
   <div class="header-inner">
-    <div class="brand" routerLink="/" style="cursor: pointer;">
+    <div class="brand" routerLink="/" style="cursor: pointer;" (click)="onNavClick('/')" >
       <span class="brand-mark">±</span>
       <div>
         <h1>Measure</h1>
@@ -13,7 +13,7 @@
     <nav class="app-nav" [class.open]="menuOpen()">
       @for (item of nav; track item.path) {
         <a [routerLink]="item.path" routerLinkActive="active"
-           (click)="menuOpen.set(false)">
+           (click)="onNavClick(item.path)">
           <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>{{ item.label }}
         </a>
       }

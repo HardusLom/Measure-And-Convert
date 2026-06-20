@@ -8,125 +8,85 @@
   <input class="input" type="search" placeholder="Search quantities or units…"
          [ngModel]="term()" (ngModelChange)="term.set($event)" />
   <div class="chip-row" style="margin-top: 0.9rem;">
-    <button class="chip" [class.active]="sys() === 'all'" (click)="sys.set('all')">All systems</button>
     @for (s of systems; track s.id) {
-      <button class="chip" [class.active]="sys() === s.id" (click)="sys.set(s.id)">{{ s.label }}</button>
+      <button class="chip" [class.active]="sys() === s.id" (click)="selectSystem(s.id)">{{ s.label }}</button>
     }
-  </div>
-  <div class="chip-row" style="margin-top: 0.5rem;">
-    <button class="chip" [class.active]="selectedCategory() === 'all'" (click)="selectedCategory.set('all')">All categories</button>
-    @for (cat of categories; track cat) {
-      <button class="chip" [class.active]="selectedCategory() === cat" (click)="selectedCategory.set(cat)">{{ cat }}</button>
-    }
+    <button class="chip" [class.active]="sys() === 'all'" (click)="selectSystem('all')">All Systems</button>
   </div>
 </div>
 
-<p style="color: var(--text-faint); font-size: 0.85rem; margin: 1.25rem 0 0.5rem;">
+<nav class="tab-bar" role="tablist">
+  @for (cat of filteredCategories(); track cat) {
+    <button class="tab" role="tab" [class.active]="activeTab() === cat"
+            (click)="activeTab.set(cat)">{{ cat }}</button>
+  }
+  <button class="tab" role="tab" [class.active]="activeTab() === 'all'"
+          (click)="activeTab.set('all')">All</button>
+</nav>
+
+<p class="unit-count">
   {{ shownCount() }} unit{{ shownCount() === 1 ? '' : 's' }} shown
 </p>
 
-@if (favouriteRows().length > 0) {
-  <div class="card" style="padding: 0.6rem 1rem;">
-    <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin: 0.5rem 0.2rem;">
-      Favourites
-    </h3>
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 4%;">Favourite</th>
-          <th style="width: 22%;">Quantity</th>
-          <th style="width: 6%;">Sym.</th>
-          <th style="width: 18%;">System</th>
-          <th style="width: 30%;">Unit</th>
-          <th style="width: 10%;">Symbol</th>
-          <th style="width: 10%;">Convert</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of favouriteRows(); track r.quantityId + r.unitId) {
-          <tr>
-            <td class="cb-cell">
-              <input type="checkbox" checked
-                     (change)="toggleFavourite(r, $event)" />
-            </td>
-            <td>{{ r.qty }}</td>
-            <td class="mono">{{ r.qsym || '—' }}</td>
-            <td><span class="badge" [class]="'badge ' + r.system">{{ label(r.system) }}</span></td>
-            <td>{{ r.unitName }}</td>
-            <td class="mono">{{ r.unitSym }}</td>
-            <td>
-              @if (r.convertible) {
-                <a class="btn btn-ghost btn-xs"
-                   [routerLink]="['/converter']"
-                   [queryParams]="{ q: r.quantityId, from: r.unitId }"
-                   title="Convert {{ r.unitName }}">⇄</a>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-}
 
-@for (group of groups(); track group.category) {
-  <div class="card" style="padding: 0.6rem 1rem;">
-    <div class="cat-header">
-      <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin: 0.5rem 0.2rem;">
-        {{ group.category }}
-      </h3>
-      @if (categoryInfo[group.category]) {
-        <button class="info-toggle"
-                (click)="toggleInfo(group.category)"
-                [attr.aria-expanded]="isExpanded(group.category)"
-                [title]="isExpanded(group.category) ? 'Hide info' : 'About ' + group.category">
-          {{ isExpanded(group.category) ? '▾' : 'ℹ' }}
-        </button>
+<div class="tab-panel" role="tabpanel">
+  @for (group of groups(); track group.category) {
+    <div class="card" style="padding: 0.6rem 1rem;">
+      <div class="cat-header">
+        <h3 class="cat-title">{{ group.category }}</h3>
+        @if (categoryInfo[group.category]) {
+          <button class="info-toggle"
+                  (click)="toggleInfo(group.category)"
+                  [attr.aria-expanded]="isExpanded(group.category)"
+                  [title]="isExpanded(group.category) ? 'Hide info' : 'About ' + group.category">
+            {{ isExpanded(group.category) ? '▾' : 'ℹ' }}
+          </button>
+        }
+      </div>
+      @if (isExpanded(group.category) && categoryInfo[group.category]) {
+        <p class="cat-info">{{ categoryInfo[group.category] }}</p>
       }
-    </div>
-    @if (isExpanded(group.category) && categoryInfo[group.category]) {
-      <p class="cat-info">{{ categoryInfo[group.category] }}</p>
-    }
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 4%;">Favourite</th>
-          <th style="width: 22%;">Quantity</th>
-          <th style="width: 6%;">Sym.</th>
-          <th style="width: 18%;">System</th>
-          <th style="width: 30%;">Unit</th>
-          <th style="width: 10%;">Symbol</th>
-          <th style="width: 10%;">Convert</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of group.rows; track r.unitName + r.unitSym + r.qty) {
+      <table>
+        <thead>
           <tr>
-            <td class="cb-cell">
-              <input type="checkbox"
-                     [checked]="isFavourited(r.quantityId, r.unitId)"
-                     (change)="toggleFavourite(r, $event)" />
-            </td>
-            <td>{{ r.qty }}</td>
-            <td class="mono">{{ r.qsym || '—' }}</td>
-            <td><span class="badge" [class]="'badge ' + r.system">{{ label(r.system) }}</span></td>
-            <td>{{ r.unitName }}</td>
-            <td class="mono">{{ r.unitSym }}</td>
-            <td>
-              @if (r.convertible) {
-                <a class="btn btn-ghost btn-xs"
-                   [routerLink]="['/converter']"
-                   [queryParams]="{ q: r.quantityId, from: r.unitId }"
-                   title="Convert {{ r.unitName }}">⇄</a>
-              }
-            </td>
+            <th style="width: 25%;">Quantity</th>
+            <th style="width: 6%;">Sym.</th>
+            <th style="width: 20%;">System</th>
+            <th style="width: 33%;">Unit</th>
+            <th style="width: 10%;">Symbol</th>
+            <th style="width: 6%;">Convert</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-}
+        </thead>
+        <tbody>
+          @for (r of group.rows; track r.unitName + r.unitSym + r.qty) {
+            <tr>
+              <td>{{ r.qty }}</td>
+              <td class="mono">{{ r.qsym || '—' }}</td>
+              <td><span class="badge" [class]="'badge ' + r.system">{{ label(r.system) }}</span></td>
+              <td>
+                @if (r.convertible) {
+                  <a class="unit-link" [routerLink]="['/converter']" [queryParams]="{ q: r.quantityId, from: r.unitId }">{{ r.unitName }}</a>
+                } @else {
+                  {{ r.unitName }}
+                }
+              </td>
+              <td class="mono">{{ r.unitSym }}</td>
+              <td>
+                @if (r.convertible) {
+                  <a class="btn btn-ghost btn-xs"
+                     [routerLink]="['/converter']"
+                     [queryParams]="{ q: r.quantityId, from: r.unitId }"
+                     title="Convert {{ r.unitName }}">⇄</a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 
-@if (groups().length === 0) {
-  <div class="empty">No matching units found.</div>
-}
+  @if (groups().length === 0) {
+    <div class="empty">No matching units found.</div>
+  }
+</div>

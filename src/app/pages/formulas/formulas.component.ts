@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ConversionService } from '../../services/conversion.service';
 import { Formula } from '../../models/unit.model';
 
@@ -31,4 +32,14 @@ export class FormulasComponent {
       return matchArea && matchTerm;
     });
   });
+
+  constructor() {
+    inject(ActivatedRoute).queryParamMap.subscribe(params => {
+      const search = params.get('search');
+      if (search) {
+        this.area.set('all');
+        this.term.set(search);
+      }
+    });
+  }
 }

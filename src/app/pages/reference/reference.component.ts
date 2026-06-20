@@ -1,7 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ConversionService } from '../../services/conversion.service';
+import { ReferenceResetService } from '../../services/reference-reset.service';
 import { SYSTEMS, SystemId, Quantity } from '../../models/unit.model';
 import { CATEGORY_INFO } from '../../data/units.data';
 
@@ -34,27 +36,30 @@ export class ReferenceComponent {
   readonly categoryInfo = CATEGORY_INFO;
 
   readonly term = signal('');
-  readonly sys = signal<SystemId | 'all'>('all');
-  readonly selectedCategory = signal<string | 'all'>('all');
+  readonly sys = signal<SystemId | 'all'>('si');
+  readonly activeTab = signal<string>('');
   private readonly expandedCategories = signal<Set<string>>(new Set());
 
-  readonly categories: string[] = [...new Set(this.service.quantities.map(q => q.category))];
+  readonly categories: string[] = [...new Set(this.service.quantities.map(q => q.category))].sort();
+
+  readonly filteredCategories = computed<string[]>(() => {
+    const sys = this.sys();
+    if (sys === 'all') return this.categories;
+    const validCats = new Set<string>();
+    for (const r of this.allRows) {
+      if (r.system === sys) validCats.add(r.qtyCategory);
+    }
+    return this.categories.filter(c => validCats.has(c));
+  });
 
   readonly totalUnits = this.service.quantities.reduce((n, q) => n + q.units.length, 0);
 
   private readonly allRows: Row[] = this.buildRows(this.service.quantities);
 
-  private readonly favouriteKeys = signal<Set<string>>(new Set());
-
-  readonly favouriteRows = computed<Row[]>(() => {
-    const keys = this.favouriteKeys();
-    return this.allRows.filter((r) => keys.has(`${r.quantityId}|${r.unitId}`));
-  });
-
   readonly groups = computed<Group[]>(() => {
     const q = this.term().trim().toLowerCase();
     const sys = this.sys();
-    const cat = this.selectedCategory();
+    const cat = this.activeTab();
     const filtered = this.allRows.filter((r) => {
       const matchSys = sys === 'all' || r.system === sys;
       const matchCat = cat === 'all' || r.qtyCategory === cat;
@@ -72,22 +77,37 @@ export class ReferenceComponent {
       arr.push(r);
       byCat.set(r.qtyCategory, arr);
     }
-    return [...byCat.entries()].map(([category, rows]) => ({ category, rows }));
+    return [...byCat.entries()].map(([category, rows]) => ({ category, rows })).sort((a, b) => a.category.localeCompare(b.category));
   });
 
   readonly shownCount = computed(() => this.groups().reduce((n, g) => n + g.rows.length, 0));
 
-  isFavourited(quantityId: string, unitId: string): boolean {
-    return this.favouriteKeys().has(`${quantityId}|${unitId}`);
-  }
+  private readonly route = inject(ActivatedRoute);
 
-  toggleFavourite(row: Row, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    const key = `${row.quantityId}|${row.unitId}`;
-    const next = new Set(this.favouriteKeys());
-    if (checked) next.add(key);
-    else next.delete(key);
-    this.favouriteKeys.set(next);
+  constructor() {
+    this.activeTab.set(this.filteredCategories()[0] ?? '');
+
+    effect(() => {
+      const cats = this.filteredCategories();
+      const current = this.activeTab();
+      if (current !== 'all' && !cats.includes(current)) {
+        this.activeTab.set(cats[0] ?? 'all');
+      }
+    }, { allowSignalWrites: true });
+
+    this.route.queryParamMap.subscribe(params => {
+      const search = params.get('search');
+      if (search) {
+        this.sys.set('all');
+        this.activeTab.set('all');
+        this.term.set(search);
+      }
+    });
+
+    inject(ReferenceResetService).reset$.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.sys.set('si');
+      this.term.set('');
+    });
   }
 
   private buildRows(quantities: Quantity[]): Row[] {
@@ -120,6 +140,11 @@ export class ReferenceComponent {
     if (next.has(category)) next.delete(category);
     else next.add(category);
     this.expandedCategories.set(next);
+  }
+
+  selectSystem(id: SystemId | 'all'): void {
+    this.sys.set(id);
+    this.activeTab.set(this.filteredCategories()[0] ?? '');
   }
 
   label(id: SystemId): string {

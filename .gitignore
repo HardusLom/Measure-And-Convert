@@ -4,3 +4,4 @@ dist
 .playwright-mcp
 src/environments/environment.ts
 .DS_Store
+.claude

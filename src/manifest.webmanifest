@@ -1,6 +1,6 @@
 {
-  "name": "Measure — Units & Conversions",
-  "short_name": "Measure",
+  "name": "UnitLab",
+  "short_name": "UnitLab",
   "description": "Reference, converter, SI prefixes, formulas and a quiz for measurement units.",
   "theme_color": "#1a1a2e",
   "background_color": "#1a1a2e",

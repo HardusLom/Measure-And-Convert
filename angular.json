@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "measure-app": {
+    "unitlab": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -51,8 +51,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": { "buildTarget": "measure-app:build:production" },
-            "development": { "buildTarget": "measure-app:build:development" }
+            "production": { "buildTarget": "unitlab:build:production" },
+            "development": { "buildTarget": "unitlab:build:development" }
           },
           "defaultConfiguration": "development"
         }

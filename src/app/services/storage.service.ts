@@ -1,16 +1,16 @@
 import { Injectable, signal } from '@angular/core';
 import { Favourite, HistoryItem } from '../models/unit.model';
 
-const FAV_KEY = 'measure.favourites';
-const HIST_KEY = 'measure.history';
-const SCORE_KEY = 'measure.bestScore';
+const FAV_KEY = 'unitlabfavourites';
+const HIST_KEY = 'unitlabhistory';
+const SCORE_KEY = 'unitlabbestScore';
 const HISTORY_LIMIT = 25;
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 const DIFFICULTY_SCORE_KEYS: Record<Difficulty, string> = {
-  easy: 'measure.bestScore.easy',
-  medium: 'measure.bestScore.medium',
-  hard: 'measure.bestScore.hard',
+  easy: 'unitlabbestScore.easy',
+  medium: 'unitlabbestScore.medium',
+  hard: 'unitlabbestScore.hard',
 };
 
 @Injectable({ providedIn: 'root' })

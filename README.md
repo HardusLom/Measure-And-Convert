@@ -1,4 +1,4 @@
-# Measure — units, quantities & conversions
+# UnitLab — units, quantities & conversions
 
 An Angular 18 (standalone components) SPA for exploring measurement units, converting between them, and learning via quiz. No UI framework — plain CSS with CSS variables and `prefers-color-scheme` for light/dark theming. Ships as a PWA.
 

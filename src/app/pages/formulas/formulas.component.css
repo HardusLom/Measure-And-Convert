@@ -1,0 +1,18 @@
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+.formula-grid .card { margin-top: 0; }
+.formula-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.formula-head h3 { margin: 0; }
+.expr {
+  font-size: 1.15rem;
+  padding: 0.6rem 0.8rem;
+  margin: 0.75rem 0;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.desc { color: var(--text-muted); font-size: 0.9rem; margin: 0 0 0.75rem; }

@@ -94,7 +94,7 @@ The reference page has a session-only Favourites table (in-memory `Set` signal, 
 
 - All component templates must live in a separate `.html` file (`templateUrl`) — never use inline `template` strings.
 - Component, template, and style files share the same directory and base name (e.g. `foo.component.ts`, `foo.component.html`, `foo.component.css`).
-- Inline `styles: [...]` arrays are acceptable for component-scoped styles; external `.css` files are not required.
+- All component styles must live in a separate `.css` file (`styleUrl`) — never use inline `styles: [...]` arrays.
 
 ## Notes
 

@@ -1,0 +1,11 @@
+.prefix-input {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 1rem;
+}
+.restated { margin: 1rem 0 0; color: var(--accent-text); font-weight: 600; }
+tr.highlight td { background: var(--accent-soft) !important; }
+sup { font-size: 0.7em; }
+@media (max-width: 560px) {
+  .prefix-input { grid-template-columns: 1fr; }
+}

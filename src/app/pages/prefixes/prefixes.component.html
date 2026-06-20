@@ -38,7 +38,7 @@
     </thead>
     <tbody>
       @for (p of prefixes; track p.symbol) {
-        <tr [class.highlight]="p.symbol === prefixSymbol">
+        <tr [class.highlight]="p.symbol === prefixSymbol" (click)="prefixSymbol = p.symbol" style="cursor: pointer;">
           <td>{{ p.name }}</td>
           <td class="mono">{{ p.symbol || '—' }}{{ unit }}</td>
           <td class="mono">10<sup>{{ p.exponent }}</sup></td>

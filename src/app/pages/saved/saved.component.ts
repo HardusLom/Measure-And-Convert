@@ -10,23 +10,7 @@ import { fmt } from '../../shared/format.util';
   standalone: true,
   imports: [],
   templateUrl: './saved.component.html',
-  styles: [
-    `
-      .list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-      .list li { display: flex; align-items: center; gap: 0.5rem; }
-      .item {
-        flex: 1; text-align: left;
-        display: flex; flex-direction: column; gap: 0.15rem;
-        padding: 0.7rem 0.85rem;
-        background: var(--surface); color: var(--text);
-        border: 1px solid var(--border); border-radius: var(--radius-sm);
-        cursor: pointer; transition: background 0.12s;
-      }
-      .item:hover { background: var(--surface-2); }
-      .item-title { font-weight: 600; }
-      .item-sub { font-size: 0.82rem; color: var(--text-faint); }
-    `,
-  ],
+  styleUrl: './saved.component.css',
 })
 export class SavedComponent {
   readonly service = inject(ConversionService);
